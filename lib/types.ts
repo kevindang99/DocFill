@@ -5,8 +5,9 @@ export interface FilledSlot {
     id: string;
     originalText: string;
     filledValue: string;
-    source: "user_prompt" | "ai_generated" | "rag" | "skipped";
+    source: "user_prompt" | "rag" | "generated" | "skipped";
     confidence: number;
+    ragQuery?: string;
     reasoning?: string;
 }
 
@@ -17,6 +18,12 @@ export type WorkflowEventType =
     | "slot_detected"
     | "slot_filling"
     | "slot_filled"
+    | "plan_complete"
+    | "edit_progress"
+    | "edit_success"
+    | "edit_failed"
+    | "rebuild"
+    | "warning"
     | "complete"
     | "error";
 
@@ -34,6 +41,7 @@ export interface TemplateFillerResult {
         totalSlots: number;
         filledSlots: number;
         skippedSlots: number;
+        ragQueries: number;
         processingTimeMs: number;
     };
     download: {

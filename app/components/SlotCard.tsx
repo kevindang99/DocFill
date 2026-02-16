@@ -12,12 +12,12 @@ interface SlotCardProps {
 export function SlotCard({ slot, index }: SlotCardProps) {
     const statusConfig = {
         user_prompt: { label: "Done", badge: "badge-done", icon: Check },
-        ai_generated: { label: "Done", badge: "badge-done", icon: Check },
+        generated: { label: "Done", badge: "badge-done", icon: Check },
         rag: { label: "Done", badge: "badge-done", icon: Check },
         skipped: { label: "Skipped", badge: "badge-skipped", icon: SkipForward },
     };
 
-    const status = statusConfig[slot.source] || statusConfig.ai_generated;
+    const status = statusConfig[slot.source] || statusConfig.generated;
     const StatusIcon = status.icon;
 
     return (
