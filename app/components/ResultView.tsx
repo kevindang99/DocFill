@@ -9,12 +9,13 @@ import {
     Clock,
     BarChart3,
     Brain,
-    ChevronDown,
-    ChevronUp,
+    Eye,
+    ListChecks,
 } from "lucide-react";
 import { useState } from "react";
 import { SlotCard } from "./SlotCard";
 import { ThoughtStream } from "./ThoughtStream";
+import { DocumentPreview } from "./DocumentPreview";
 import type { TemplateFillerResult, WorkflowEvent } from "@/lib/types";
 
 interface ResultViewProps {
@@ -23,8 +24,10 @@ interface ResultViewProps {
     onReset: () => void;
 }
 
+type ResultTab = "preview" | "fields" | "reasoning";
+
 export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
-    const [showThoughts, setShowThoughts] = useState(false);
+    const [activeTab, setActiveTab] = useState<ResultTab>("preview");
 
     const handleDownload = () => {
         if (!result.download.base64) return;
@@ -45,51 +48,40 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
         URL.revokeObjectURL(url);
     };
 
+    const tabs: { id: ResultTab; label: string; icon: React.ElementType; badge?: string }[] = [
+        { id: "preview", label: "Preview", icon: Eye },
+        { id: "fields", label: "Fields", icon: ListChecks, badge: `${result.metadata.filledSlots}` },
+        { id: "reasoning", label: "AI Reasoning", icon: Brain, badge: `${thoughts.length}` },
+    ];
+
     return (
         <div className="animate-fade-in flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <button onClick={onReset} className="btn-ghost text-sm">
-                    <ArrowLeft className="w-4 h-4" />
-                    New Document
+            {/* Header bar */}
+            <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                    <button onClick={onReset} className="btn-ghost text-xs">
+                        <ArrowLeft className="w-4 h-4" />
+                        New
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ background: "var(--accent-emerald)" }}
+                        />
+                        <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                            {result.documentSummary}
+                        </span>
+                    </div>
+                </div>
+
+                <button onClick={handleDownload} className="btn-primary text-xs py-2.5 px-5">
+                    <Download className="w-4 h-4" />
+                    Download {result.download.filename}
                 </button>
             </div>
 
-            {/* Success banner */}
-            <div
-                className="glass-card p-6 mb-6 text-center relative overflow-hidden"
-                style={{ border: "1px solid rgba(52, 211, 153, 0.2)" }}
-            >
-                {/* Glow effect */}
-                <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                        background: "radial-gradient(ellipse at 50% 0%, rgba(52, 211, 153, 0.08) 0%, transparent 60%)",
-                    }}
-                />
-
-                <div className="relative z-10">
-                    <div
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                        style={{ background: "rgba(52, 211, 153, 0.15)" }}
-                    >
-                        <CheckCircle2 className="w-7 h-7" style={{ color: "var(--accent-emerald)" }} />
-                    </div>
-                    <h2 className="text-xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>
-                        Document Ready
-                    </h2>
-                    <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
-                        {result.documentSummary}
-                    </p>
-                    <button onClick={handleDownload} className="btn-primary text-sm">
-                        <Download className="w-4 h-4" />
-                        Download {result.download.filename}
-                    </button>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            {/* Stats row */}
+            <div className="grid grid-cols-4 gap-3 mb-5 shrink-0">
                 {[
                     {
                         icon: FileText,
@@ -116,60 +108,79 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
                         color: "var(--accent-indigo)",
                     },
                 ].map((stat) => (
-                    <div key={stat.label} className="glass-card p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                    <div key={stat.label} className="glass-card p-3.5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
+                            <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
                                 {stat.label}
                             </span>
                         </div>
-                        <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                        <p className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
                             {stat.value}
                         </p>
                     </div>
                 ))}
             </div>
 
-            {/* Filled slots list */}
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                <h3
-                    className="text-sm font-semibold mb-3 shrink-0"
-                    style={{ color: "var(--text-secondary)" }}
-                >
-                    Filled Fields
-                </h3>
-                <div className="flex-1 overflow-y-auto space-y-3 stagger-children">
-                    {result.changes.map((slot, i) => (
-                        <SlotCard key={slot.id} slot={slot} index={i} />
-                    ))}
-                </div>
+            {/* Tab bar */}
+            <div
+                className="flex gap-1 p-1 rounded-xl mb-4 shrink-0"
+                style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)" }}
+            >
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 justify-center"
+                            style={{
+                                background: isActive ? "var(--bg-surface)" : "transparent",
+                                color: isActive ? "var(--text-primary)" : "var(--text-muted)",
+                                boxShadow: isActive ? "var(--shadow-sm)" : "none",
+                            }}
+                        >
+                            <tab.icon className="w-4 h-4" />
+                            {tab.label}
+                            {tab.badge && (
+                                <span
+                                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                    style={{
+                                        background: isActive ? "rgba(99, 102, 241, 0.15)" : "var(--border-default)",
+                                        color: isActive ? "var(--accent-indigo)" : "var(--text-muted)",
+                                    }}
+                                >
+                                    {tab.badge}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Collapsible AI Reasoning */}
-            <div className="mt-4 shrink-0">
-                <button
-                    onClick={() => setShowThoughts(!showThoughts)}
-                    className="flex items-center gap-2 w-full p-3 rounded-lg transition-colors text-sm font-medium"
-                    style={{
-                        background: "var(--bg-card)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border-default)",
-                    }}
-                >
-                    <Brain className="w-4 h-4" style={{ color: "var(--accent-indigo)" }} />
-                    AI Reasoning ({thoughts.length} steps)
-                    {showThoughts ? (
-                        <ChevronUp className="w-4 h-4 ml-auto" />
-                    ) : (
-                        <ChevronDown className="w-4 h-4 ml-auto" />
-                    )}
-                </button>
-                {showThoughts && (
-                    <div
-                        className="mt-2 glass-card max-h-64 overflow-y-auto"
-                        style={{ animationDelay: "0s" }}
-                    >
-                        <ThoughtStream thoughts={thoughts} className="p-3" />
+            {/* Tab content */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+                {activeTab === "preview" && (
+                    <div className="h-full animate-fade-in">
+                        <DocumentPreview
+                            previewHtml=""
+                            changes={result.changes}
+                            filename={result.download.filename}
+                        />
+                    </div>
+                )}
+
+                {activeTab === "fields" && (
+                    <div className="h-full overflow-y-auto space-y-3 stagger-children animate-fade-in">
+                        {result.changes.map((slot, i) => (
+                            <SlotCard key={slot.id} slot={slot} index={i} />
+                        ))}
+                    </div>
+                )}
+
+                {activeTab === "reasoning" && (
+                    <div className="h-full glass-card overflow-hidden animate-fade-in">
+                        <ThoughtStream thoughts={thoughts} className="h-full p-3" />
                     </div>
                 )}
             </div>
