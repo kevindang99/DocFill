@@ -1,7 +1,7 @@
 // app/components/DocumentPreview.tsx
 "use client";
 
-import { FileText, Maximize2, Minimize2, Loader2, AlertCircle } from "lucide-react";
+import { FileText, Maximize2, Minimize2, Loader2, AlertCircle, Download } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 
 interface DocumentPreviewProps {
@@ -77,6 +77,23 @@ export function DocumentPreview({ base64, filename }: DocumentPreviewProps) {
         };
     }, [base64, filename]);
 
+    const handleDownload = () => {
+        const binaryString = atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div
             className={`glass-card flex flex-col overflow-hidden transition-all duration-300 ${expanded ? "fixed inset-4 z-50" : "relative min-h-[1000px] h-full"
@@ -109,14 +126,25 @@ export function DocumentPreview({ base64, filename }: DocumentPreviewProps) {
                         OUTPUT
                     </span>
                 </div>
-                <button
-                    onClick={() => setExpanded(!expanded)}
-                    className="p-1.5 rounded-md transition-colors hover:bg-white/5"
-                    style={{ color: "var(--text-muted)" }}
-                    title={expanded ? "Exit fullscreen" : "Fullscreen"}
-                >
-                    {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleDownload}
+                        className="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold 
+                        text-indigo-600 hover:bg-indigo-50 transition-all duration-300 active:scale-95"
+                        title="Download"
+                    >
+                        <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
+                        <span>Download</span>
+                    </button>
+                    <div className="w-px h-4 bg-gray-200 mx-1" />
+                    <button
+                        onClick={() => setExpanded(!expanded)}
+                        className="p-1.5 rounded-full transition-all hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                        title={expanded ? "Exit fullscreen" : "Fullscreen"}
+                    >
+                        {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    </button>
+                </div>
             </div>
 
             {/* PDF Viewer */}

@@ -74,9 +74,14 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
                     </div>
                 </div>
 
-                <button onClick={handleDownload} className="btn-primary text-xs py-2.5 px-5">
-                    <Download className="w-4 h-4" />
-                    Download {result.download.filename}
+                <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-2 py-2 px-5 rounded-full font-medium transition-all duration-300 text-[13px] 
+                    bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-[0_0_20px_rgba(79,70,229,0.4)] active:scale-[0.98] 
+                    border border-indigo-400/30 group shadow-sm"
+                >
+                    <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
+                    <span>Download</span>
                 </button>
             </div>
 
