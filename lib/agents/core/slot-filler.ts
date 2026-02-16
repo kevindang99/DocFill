@@ -50,7 +50,6 @@ export async function slotFillerAgent(input: SlotFillerInput): Promise<SlotFille
         // Generate filled values using reasoning loop with tools
         const result = await generateText({
             model: ModelPresets.advanced.model,
-            temperature: ModelPresets.advanced.temperature,
             maxRetries: ModelPresets.advanced.maxRetries,
             maxOutputTokens: ModelPresets.advanced.maxOutputTokens,
             stopWhen: stepCountIs(10), // 🔥 Enable multi-step reasoning loop (up to 10 steps)
@@ -156,7 +155,7 @@ Fill all ${input.slots.length} slots in the document using the available tools.`
                     }) => {
                         emit({
                             type: "thought",
-                            message: `✅ Finalizing ${filledSlots.length} slots...`,
+                            message: `Finalizing ${filledSlots.length} slots...`,
                         });
 
                         if (summary) {

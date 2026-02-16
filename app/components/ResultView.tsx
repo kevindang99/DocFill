@@ -163,8 +163,7 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
                 {activeTab === "preview" && (
                     <div className="h-full animate-fade-in">
                         <DocumentPreview
-                            previewHtml=""
-                            changes={result.changes}
+                            base64={result.download.base64}
                             filename={result.download.filename}
                         />
                     </div>

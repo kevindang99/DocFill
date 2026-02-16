@@ -1,22 +1,85 @@
 // app/components/DocumentPreview.tsx
 "use client";
 
-import { FileText, Maximize2, Minimize2 } from "lucide-react";
-import { useState } from "react";
-import type { FilledSlot } from "@/lib/types";
+import { FileText, Maximize2, Minimize2, Loader2, AlertCircle } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 
 interface DocumentPreviewProps {
-    previewHtml: string;
-    changes: FilledSlot[];
+    /** Base64-encoded DOCX content */
+    base64: string;
     filename: string;
 }
 
-export function DocumentPreview({ previewHtml, changes, filename }: DocumentPreviewProps) {
+export function DocumentPreview({ base64, filename }: DocumentPreviewProps) {
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [expanded, setExpanded] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Convert DOCX → PDF via API, then create blob URL
+    useEffect(() => {
+        if (!base64) return;
+
+        let revoked = false;
+        let currentUrl: string | null = null;
+
+        const convertToPdf = async () => {
+            setLoading(true);
+            setError(null);
+
+            try {
+                const res = await fetch("/api/convert-pdf", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ base64, filename }),
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to convert document");
+                }
+
+                const data = await res.json();
+
+                // Decode PDF base64 → blob URL
+                const binaryString = atob(data.base64);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const blob = new Blob([bytes], { type: "application/pdf" });
+                const url = URL.createObjectURL(blob);
+
+                if (!revoked) {
+                    currentUrl = url;
+                    setPdfUrl(url);
+                } else {
+                    URL.revokeObjectURL(url);
+                }
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "Conversion failed";
+                console.error("[DocumentPreview] Error converting to PDF:", message);
+                if (!revoked) {
+                    setError(message);
+                }
+            } finally {
+                if (!revoked) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        convertToPdf();
+
+        return () => {
+            revoked = true;
+            if (currentUrl) URL.revokeObjectURL(currentUrl);
+        };
+    }, [base64, filename]);
 
     return (
         <div
-            className={`glass-card flex flex-col overflow-hidden transition-all duration-300 ${expanded ? "fixed inset-4 z-50" : "relative"
+            className={`glass-card flex flex-col overflow-hidden transition-all duration-300 ${expanded ? "fixed inset-4 z-50" : "relative min-h-[1000px] h-full"
                 }`}
             style={expanded ? { boxShadow: "0 0 60px rgba(0,0,0,0.6)" } : {}}
         >
@@ -43,12 +106,12 @@ export function DocumentPreview({ previewHtml, changes, filename }: DocumentPrev
                         className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                         style={{ background: "rgba(52, 211, 153, 0.15)", color: "var(--accent-emerald)" }}
                     >
-                        PREVIEW
+                        OUTPUT
                     </span>
                 </div>
                 <button
                     onClick={() => setExpanded(!expanded)}
-                    className="p-1.5 rounded-md transition-colors"
+                    className="p-1.5 rounded-md transition-colors hover:bg-white/5"
                     style={{ color: "var(--text-muted)" }}
                     title={expanded ? "Exit fullscreen" : "Fullscreen"}
                 >
@@ -56,145 +119,40 @@ export function DocumentPreview({ previewHtml, changes, filename }: DocumentPrev
                 </button>
             </div>
 
-            {/* Document body */}
-            <div className="flex-1 overflow-y-auto p-6" style={{ background: "var(--bg-card)" }}>
-                <div
-                    className="mx-auto rounded-lg shadow-lg"
-                    style={{
-                        maxWidth: "680px",
-                        background: "#ffffff",
-                        color: "#1a1a2e",
-                        padding: "48px 56px",
-                        minHeight: expanded ? "calc(100vh - 200px)" : "400px",
-                        fontFamily: "'Georgia', 'Times New Roman', serif",
-                        fontSize: "14px",
-                        lineHeight: "1.8",
-                        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-                    }}
-                >
-                    {previewHtml ? (
-                        <div
-                            dangerouslySetInnerHTML={{ __html: previewHtml }}
-                            className="document-preview-content"
-                        />
-                    ) : (
-                        /* Fallback: render a document from filled slots */
-                        <FallbackPreview changes={changes} />
-                    )}
-                </div>
-            </div>
+            {/* PDF Viewer */}
+            <div className="relative flex-1 overflow-hidden" style={{ background: "var(--bg-surface)" }}>
+                {loading && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
+                        style={{ background: "var(--bg-surface)" }}>
+                        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--accent-indigo)" }} />
+                        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+                            Converting to PDF...
+                        </span>
+                    </div>
+                )}
 
-            {/* Legend */}
-            <div
-                className="flex items-center gap-4 px-4 py-2.5 shrink-0"
-                style={{ borderTop: "1px solid var(--border-default)" }}
-            >
-                <span className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-                    Legend:
-                </span>
-                <span className="flex items-center gap-1.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                    <span
-                        className="inline-block w-3 h-3 rounded-sm"
-                        style={{ background: "rgba(52, 211, 153, 0.25)", border: "1px solid rgba(52, 211, 153, 0.5)" }}
+                {error && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 p-6 text-center"
+                        style={{ background: "var(--bg-surface)" }}>
+                        <AlertCircle className="w-10 h-10" style={{ color: "var(--accent-amber)" }} />
+                        <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                            Preview unavailable
+                        </p>
+                        <p className="text-xs max-w-md" style={{ color: "var(--text-muted)" }}>
+                            {error}
+                        </p>
+                    </div>
+                )}
+
+                {pdfUrl && !error && (
+                    <iframe
+                        src={`${pdfUrl}#view=FitH`}
+                        className="w-full h-full border-0"
+                        title={`Preview of ${filename}`}
+                        style={{ visibility: loading ? "hidden" : "visible", minHeight: "1000px" }}
                     />
-                    AI-filled content
-                </span>
+                )}
             </div>
         </div>
-    );
-}
-
-/** Fallback preview using slot data when no previewHtml is available */
-function FallbackPreview({ changes }: { changes: FilledSlot[] }) {
-    return (
-        <div>
-            {/* Mock document header */}
-            <div style={{ textAlign: "center", marginBottom: "32px" }}>
-                <h1 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "4px", color: "#1a1a2e" }}>
-                    SERVICE AGREEMENT
-                </h1>
-                <p style={{ fontSize: "12px", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Confidential Document
-                </p>
-                <div style={{ width: "60px", height: "2px", background: "#6366f1", margin: "16px auto 0" }} />
-            </div>
-
-            {/* Intro paragraph */}
-            <p style={{ marginBottom: "20px" }}>
-                This Service Agreement (the &ldquo;Agreement&rdquo;) is entered into as of{" "}
-                <HighlightedValue value={changes.find(c => c.originalText.includes("Date"))?.filledValue || "[Date]"} />{" "}
-                by and between{" "}
-                <HighlightedValue value={changes.find(c => c.originalText.includes("Client"))?.filledValue || "[Client Name]"} />{" "}
-                (the &ldquo;Client&rdquo;) and the Service Provider.
-            </p>
-
-            {/* Section 1 */}
-            <h2 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "8px", marginTop: "24px", color: "#1a1a2e" }}>
-                1. Term of Agreement
-            </h2>
-            <p style={{ marginBottom: "20px" }}>
-                This Agreement shall commence on the date first written above and shall continue for a period of{" "}
-                <HighlightedValue value={changes.find(c => c.originalText.includes("Duration"))?.filledValue || "[Contract Duration]"} />{" "}
-                unless earlier terminated in accordance with the provisions herein.
-            </p>
-
-            {/* Section 2 */}
-            <h2 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "8px", marginTop: "24px", color: "#1a1a2e" }}>
-                2. Compensation
-            </h2>
-            <p style={{ marginBottom: "20px" }}>
-                The Client shall pay the Service Provider a total fee of{" "}
-                <HighlightedValue value={changes.find(c => c.originalText.includes("Amount"))?.filledValue || "[Total Amount]"} />{" "}
-                for the services rendered under this Agreement, payable in accordance with the payment schedule set forth in Exhibit A.
-            </p>
-
-            {/* Section 3 */}
-            <h2 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "8px", marginTop: "24px", color: "#1a1a2e" }}>
-                3. Governing Law
-            </h2>
-            <p style={{ marginBottom: "20px" }}>
-                This Agreement shall be governed by and construed in accordance with the{" "}
-                <HighlightedValue value={changes.find(c => c.originalText.includes("Governing"))?.filledValue || "[Governing Law]"} />,
-                without regard to its conflict of law principles.
-            </p>
-
-            {/* Signature block */}
-            <div style={{ marginTop: "48px", paddingTop: "24px", borderTop: "1px solid #e5e7eb" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "40px" }}>
-                    <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "8px" }}>AUTHORIZED SIGNATORY</p>
-                        <div style={{ borderBottom: "1px solid #1a1a2e", height: "32px", marginBottom: "4px" }} />
-                        <p style={{ fontWeight: 600 }}>
-                            <HighlightedValue value={changes.find(c => c.originalText.includes("Signatory"))?.filledValue || "[Signatory Name]"} />
-                        </p>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "8px" }}>CLIENT</p>
-                        <div style={{ borderBottom: "1px solid #1a1a2e", height: "32px", marginBottom: "4px" }} />
-                        <p style={{ fontWeight: 600 }}>
-                            <HighlightedValue value={changes.find(c => c.originalText.includes("Client"))?.filledValue || "[Client Name]"} />
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/** Renders a filled value with green highlight */
-function HighlightedValue({ value }: { value: string }) {
-    return (
-        <span
-            style={{
-                background: "rgba(52, 211, 153, 0.2)",
-                borderBottom: "2px solid rgba(52, 211, 153, 0.6)",
-                padding: "1px 4px",
-                borderRadius: "3px",
-                fontWeight: 600,
-                color: "#065f46",
-            }}
-        >
-            {value}
-        </span>
     );
 }

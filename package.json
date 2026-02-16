@@ -13,6 +13,7 @@
     "ai": "^6.0.86",
     "fast-xml-parser": "^5.3.6",
     "jszip": "^3.10.1",
+    "libreoffice-convert": "^1.8.1",
     "lucide-react": "^0.564.0",
     "next": "16.1.6",
     "react": "19.2.3",

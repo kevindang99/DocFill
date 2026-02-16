@@ -41,7 +41,6 @@ export async function slotAnalyzerAgent(input: SlotAnalyzerInput): Promise<SlotA
         // Use structured output instead of manual JSON parsing
         const { output } = await generateText({
             model: ModelPresets.advanced.model,
-            temperature: ModelPresets.advanced.temperature,
             maxRetries: ModelPresets.advanced.maxRetries,
             maxOutputTokens: ModelPresets.advanced.maxOutputTokens,
             system: SLOT_ANALYZER_PROMPT.replace("{format_instructions}", ""),

@@ -47,8 +47,6 @@ export async function templateFillerWorkflow(input: TemplateFillerInput): Promis
     const workflowTimer = createTimer();
     const emit = input.onProgress || (() => { });
 
-    emit({ type: "start", message: "Starting document analysis workflow..." });
-
     agentLog("template-filler", "workflow-start", {
         promptLength: input.userPrompt.length,
         bufferSize: input.fileBuffer.length,
@@ -58,7 +56,6 @@ export async function templateFillerWorkflow(input: TemplateFillerInput): Promis
         // ===========================
         // STEP 1: EXTRACT DOCX CONTENT
         // ===========================
-        emit({ type: "phase", message: "Extracting content from DOCX file..." });
         const docxContent = await extractDocxContent(input.fileBuffer);
         const plainText = getPlainText(docxContent);
 
