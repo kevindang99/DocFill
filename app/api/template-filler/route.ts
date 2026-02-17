@@ -2,7 +2,7 @@
 // Real API endpoint that processes DOCX templates using AI via SSE
 
 import { NextResponse } from "next/server";
-import { templateFillerWorkflow } from "@/lib/agents/workflows/template-filler";
+import { DocFill } from "@/sdk/typescript/src/index";
 import type { ProgressCallback } from "@/lib/agents/types/state";
 
 export const runtime = "nodejs";
@@ -86,16 +86,18 @@ export async function POST(req: Request) {
                     }
                 };
 
-                // Run the real workflow
-                const result = await templateFillerWorkflow({
-                    fileBuffer,
-                    fileName,
-                    userPrompt: prompt,
+                // Use the SDK!
+                const df = new DocFill({
                     onProgress,
                 });
 
+                const result = await df.fill({
+                    file: fileBuffer,
+                    prompt,
+                });
+
                 // Convert the filled DOCX buffer to base64 for download
-                const base64 = result.filledDocxBuffer.toString("base64");
+                const base64 = result.buffer.toString("base64");
                 const baseName = fileName.replace(/\.docx$/i, "");
 
                 // Send completion event with download data

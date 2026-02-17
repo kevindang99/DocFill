@@ -38,7 +38,7 @@ export default function Home() {
               <FileText className="w-5.5 h-5.5 text-primary" />
             </div>
             <h1 className="text-[15px] font-bold tracking-tight text-foreground/90">
-              Smart Template Filler
+              DocFill
             </h1>
           </div>
 

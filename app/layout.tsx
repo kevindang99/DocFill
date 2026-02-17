@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smart Template Filler – AI-Powered Document Automation",
+  title: "DocFill – AI-Powered Document Automation",
   description:
     "Upload a DOCX template, give AI instructions, and get a perfectly filled document with formatting preserved. Open-source and privacy-first.",
   keywords: ["template filler", "docx", "AI", "document automation", "open source"],

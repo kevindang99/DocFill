@@ -1,5 +1,5 @@
 // lib/types.ts
-// Shared types for Smart Template Filler
+// Shared types for DocFill
 
 export interface FilledSlot {
     id: string;
