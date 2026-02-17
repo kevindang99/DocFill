@@ -61,8 +61,8 @@ export function UploadZone({ file, onFileChange, disabled }: UploadZoneProps) {
     );
 
     return (
-        <div className="space-y-3">
-            <label className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+        <div className="flex-1 flex flex-col gap-3 h-full">
+            <label className="text-sm font-medium shrink-0" style={{ color: "var(--text-secondary)" }}>
                 Template File
             </label>
 
@@ -71,7 +71,7 @@ export function UploadZone({ file, onFileChange, disabled }: UploadZoneProps) {
                 onDrop={onDrop}
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
-                className={`upload-zone relative flex flex-col items-center justify-center text-center min-h-[200px] p-8 ${isDragging ? "dragging" : ""
+                className={`upload-zone flex-1 relative flex flex-col items-center justify-center text-center p-8 ${isDragging ? "dragging" : ""
                     } ${file ? "has-file" : ""} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
             >
                 <input

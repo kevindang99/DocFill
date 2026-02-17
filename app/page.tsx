@@ -31,41 +31,28 @@ export default function Home() {
       {/* ===========================
           HEADER
           =========================== */}
-      <header
-        className="h-16 flex items-center justify-between px-6 shrink-0 z-50"
-        style={{
-          background: "rgba(11, 17, 32, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--border-default)",
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <FileText className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
+        <div className="max-w-[1400px] mx-auto h-16 flex items-center justify-between px-6">
+          <div className="flex items-center gap-3.5 group cursor-pointer">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5 group-hover:bg-primary/20 transition-all duration-300">
+              <FileText className="w-5.5 h-5.5 text-primary" />
+            </div>
+            <h1 className="text-[15px] font-bold tracking-tight text-foreground/90">
               Smart Template Filler
             </h1>
-            <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-              AI-powered document automation
-            </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-ghost text-xs py-2 px-3"
-          >
-            <Github className="w-4 h-4" />
-            <span className="hidden sm:inline">GitHub</span>
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all active:scale-95 border border-border/50"
+            >
+              <Github className="w-4 h-4 transition-transform group-hover:scale-110" />
+              <span>GitHub</span>
+            </a>
+          </div>
         </div>
       </header>
 
@@ -76,14 +63,14 @@ export default function Home() {
         {view === "upload" && (
           <div className="animate-fade-in flex-1 flex flex-col">
             {/* Hero */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-10 py-4">
               <h2
-                className="text-3xl sm:text-4xl font-bold tracking-tight mb-3"
+                className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4"
                 style={{ color: "var(--text-primary)" }}
               >
                 Fill templates with{" "}
                 <span
-                  className="bg-clip-text text-transparent"
+                  className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-primary saturate-150"
                   style={{ backgroundImage: "var(--gradient-primary)" }}
                 >
                   AI precision

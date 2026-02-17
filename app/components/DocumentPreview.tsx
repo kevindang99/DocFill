@@ -130,16 +130,16 @@ export function DocumentPreview({ base64, filename }: DocumentPreviewProps) {
                     <button
                         onClick={handleDownload}
                         className="group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold 
-                        text-indigo-600 hover:bg-indigo-50 transition-all duration-300 active:scale-95"
+                        text-foreground/80 hover:bg-secondary hover:text-foreground transition-all duration-300 active:scale-95"
                         title="Download"
                     >
                         <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
                         <span>Download</span>
                     </button>
-                    <div className="w-px h-4 bg-gray-200 mx-1" />
+                    <div className="w-px h-4 bg-border mx-1" />
                     <button
                         onClick={() => setExpanded(!expanded)}
-                        className="p-1.5 rounded-full transition-all hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                        className="p-1.5 rounded-full transition-all hover:bg-secondary text-foreground/60 hover:text-foreground"
                         title={expanded ? "Exit fullscreen" : "Fullscreen"}
                     >
                         {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}

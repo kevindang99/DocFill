@@ -61,7 +61,6 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
                 <div className="flex items-center gap-3">
                     <button onClick={onReset} className="btn-ghost text-xs">
                         <ArrowLeft className="w-4 h-4" />
-                        New
                     </button>
                     <div className="flex items-center gap-2">
                         <div
@@ -76,9 +75,12 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
 
                 <button
                     onClick={handleDownload}
-                    className="flex items-center gap-2 py-2 px-5 rounded-full font-medium transition-all duration-300 text-[13px] 
-                    bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-[0_0_20px_rgba(79,70,229,0.4)] active:scale-[0.98] 
-                    border border-indigo-400/30 group shadow-sm"
+                    className="flex items-center gap-2 py-2.5 px-6 rounded-full font-semibold transition-all duration-200 text-[13px] active:scale-[0.97] group"
+                    style={{
+                        background: "var(--accent-indigo)",
+                        color: "#fff",
+                        boxShadow: "0 2px 12px oklch(0.55 0.25 260 / 0.3)",
+                    }}
                 >
                     <Download className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
                     <span>Download</span>
@@ -140,9 +142,9 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
                             onClick={() => setActiveTab(tab.id)}
                             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 justify-center"
                             style={{
-                                background: isActive ? "var(--bg-surface)" : "transparent",
-                                color: isActive ? "var(--text-primary)" : "var(--text-muted)",
-                                boxShadow: isActive ? "var(--shadow-sm)" : "none",
+                                background: isActive ? "var(--accent-indigo)" : "transparent",
+                                color: isActive ? "#fff" : "var(--text-muted)",
+                                boxShadow: isActive ? "0 2px 8px oklch(0.55 0.25 260 / 0.25)" : "none",
                             }}
                         >
                             <tab.icon className="w-4 h-4" />
@@ -151,8 +153,8 @@ export function ResultView({ result, thoughts, onReset }: ResultViewProps) {
                                 <span
                                     className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                                     style={{
-                                        background: isActive ? "rgba(99, 102, 241, 0.15)" : "var(--border-default)",
-                                        color: isActive ? "var(--accent-indigo)" : "var(--text-muted)",
+                                        background: isActive ? "rgba(255,255,255,0.2)" : "var(--border-default)",
+                                        color: isActive ? "#fff" : "var(--text-muted)",
                                     }}
                                 >
                                     {tab.badge}
