@@ -29,6 +29,9 @@ export interface TemplateFillerInput {
     fileName: string; // Original file name (for logging/UI)
     userPrompt: string; // User instructions for filling
     onProgress?: ProgressCallback; // Optional callback for streaming progress
+    model?: string; // Optional: specify model to use
+    maxRetries?: number;
+    maxOutputTokens?: number;
 }
 
 // ===========================
@@ -72,6 +75,9 @@ export async function templateFillerWorkflow(input: TemplateFillerInput): Promis
         const analysis = await slotAnalyzerAgent({
             documentContent: plainText,
             onProgress: input.onProgress, // Pass through for detailed reasoning
+            model: input.model,
+            maxRetries: input.maxRetries,
+            maxOutputTokens: input.maxOutputTokens,
         });
         emit({
             type: "slot_detected",
@@ -115,6 +121,9 @@ export async function templateFillerWorkflow(input: TemplateFillerInput): Promis
             userPrompt: input.userPrompt,
             documentSummary: analysis.documentSummary,
             onProgress: input.onProgress, // Pass through for detailed reasoning
+            model: input.model,
+            maxRetries: input.maxRetries,
+            maxOutputTokens: input.maxOutputTokens,
         });
         const filledCount = fillResult.filledSlots.filter((s) => s.source !== "skipped").length;
         const skippedCount = fillResult.filledSlots.filter((s) => s.source === "skipped").length;

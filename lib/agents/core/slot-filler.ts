@@ -4,7 +4,7 @@
 
 import { generateText, tool, stepCountIs, APICallError } from "ai";
 import { z } from "zod";
-import { ModelPresets } from "../config/models";
+import { createModel, MODEL_CONFIG } from "../config/models";
 import { agentLog, agentError, createTimer } from "../utils/logger";
 import type { FilledSlot, AnalyzedSlot, SlotFillerOutput, ProgressCallback } from "../types/state";
 
@@ -13,6 +13,9 @@ interface SlotFillerInput {
     userPrompt: string;
     documentSummary?: string;
     onProgress?: ProgressCallback;
+    model?: string;
+    maxRetries?: number;
+    maxOutputTokens?: number;
 }
 
 // ===========================
@@ -31,9 +34,12 @@ interface SlotFillerInput {
 export async function slotFillerAgent(input: SlotFillerInput): Promise<SlotFillerOutput> {
     const timer = createTimer();
 
+    const model = createModel(input.model);
+
     agentLog("slot-filler", "starting", {
         slotCount: input.slots.length,
         promptLength: input.userPrompt.length,
+        model: input.model || "default",
     });
 
     const emit = input.onProgress || (() => { });
@@ -49,9 +55,9 @@ export async function slotFillerAgent(input: SlotFillerInput): Promise<SlotFille
 
         // Generate filled values using reasoning loop with tools
         const result = await generateText({
-            model: ModelPresets.advanced.model,
-            maxRetries: ModelPresets.advanced.maxRetries,
-            maxOutputTokens: ModelPresets.advanced.maxOutputTokens,
+            model,
+            maxRetries: input.maxRetries ?? MODEL_CONFIG.DEFAULT_MAX_RETRIES,
+            maxOutputTokens: input.maxOutputTokens ?? MODEL_CONFIG.FILLER_MAX_TOKENS,
             stopWhen: stepCountIs(10), // 🔥 Enable multi-step reasoning loop (up to 10 steps)
 
             system: `You are a document filling assistant. You have access to tools to search the knowledge base and analyze document slots.

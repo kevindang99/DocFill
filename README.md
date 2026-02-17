@@ -20,15 +20,15 @@ npm install docfill
 import { DocFill } from "docfill";
 import * as fs from "fs";
 
-// Advanced configuration
+// Sample configuration
 const wf = new DocFill({
     apiKey: "sk-your-openai-api-key-here",
-    model: "gpt-4o",                       // Use more powerful model
+    model: "gpt-5.1",                       
 });
 
 // Step-by-step processing
 const result = await wf.fill({
-    file: "contract-template.docx",
+    file: "contract-template.docx",        // Accepts file path (string) or Buffer
     prompt: "Fill client name as 'Acme Corp', date as today, address as '123 Main St'",
     onProgress: (event) => {
         if (event.type === "phase") console.log(`📋 ${event.message}`);
@@ -50,15 +50,15 @@ pip install docfill
 ```python
 from docfill import DocFill
 
-# Advanced configuration
+# Sample configuration
 wf = DocFill(
     api_key="sk-your-openai-api-key-here",
-    model="gpt-4o",                         # Use more powerful model
+    model="gpt-5.1",                        
 )
 
 # Step-by-step processing
 result = wf.fill(
-    file="contract-template.docx",
+    file="contract-template.docx",         # Accepts file path (string) or bytes
     prompt="Fill client name as 'Acme Corp', date as today, address as '123 Main St'",
     on_progress=lambda e: print(f"  [{e['type']}] {e['message']}"),
 )
@@ -95,17 +95,7 @@ Create a `.env.local` file in the root directory:
 ```env
 # OpenAI API Key (required)
 OPENAI_API_KEY=sk-your-openai-api-key-here
-
-# Optional: Override model names
-# AGENT_MODEL_NAME=gpt-4o-mini
-# AGENT_ADVANCED_MODEL=gpt-4o
 ```
-
-### Supported OpenAI Models
-- `gpt-4o-mini`
-- `gpt-4o`
-- `gpt-5.1`
-- And other OpenAI models
 
 ## 🌐 Web App
 

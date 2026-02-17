@@ -3,7 +3,7 @@
 
 import { generateText, Output, APICallError } from "ai";
 import { z } from "zod";
-import { ModelPresets } from "../config/models";
+import { createModel, MODEL_CONFIG } from "../config/models";
 import { agentLog, agentError, createTimer } from "../utils/logger";
 import { SLOT_ANALYZER_PROMPT } from "../prompts/templates";
 import type { SlotAnalyzerOutput, AnalyzedSlot, ProgressCallback } from "../types/state";
@@ -11,6 +11,9 @@ import type { SlotAnalyzerOutput, AnalyzedSlot, ProgressCallback } from "../type
 interface SlotAnalyzerInput {
     documentContent: string;
     onProgress?: ProgressCallback;
+    model?: string;
+    maxRetries?: number;
+    maxOutputTokens?: number;
 }
 
 // ===========================
@@ -33,16 +36,19 @@ export async function slotAnalyzerAgent(input: SlotAnalyzerInput): Promise<SlotA
     const timer = createTimer();
     const emit = input.onProgress || (() => { });
 
+    const model = createModel(input.model);
+
     agentLog("slot-analyzer", "starting", {
         contentLength: input.documentContent.length,
+        model: input.model || "default",
     });
 
     try {
         // Use structured output instead of manual JSON parsing
         const { output } = await generateText({
-            model: ModelPresets.advanced.model,
-            maxRetries: ModelPresets.advanced.maxRetries,
-            maxOutputTokens: ModelPresets.advanced.maxOutputTokens,
+            model,
+            maxRetries: input.maxRetries ?? MODEL_CONFIG.DEFAULT_MAX_RETRIES,
+            maxOutputTokens: input.maxOutputTokens ?? MODEL_CONFIG.ANALYZER_MAX_TOKENS,
             system: SLOT_ANALYZER_PROMPT.replace("{format_instructions}", ""),
             prompt: input.documentContent,
             output: Output.object({

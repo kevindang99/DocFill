@@ -94,18 +94,25 @@ class DocFill:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "gpt-4o",
+        model: str = "gpt-5.1",
         mode: Literal["local", "remote"] = "local",
         api_base: Optional[str] = None,
         on_progress: Optional[Callable[[dict], None]] = None,
+        max_retries: int = 3,
+        max_output_tokens: Optional[int] = None,
     ):
         self.mode = mode
         self.model = model
         self.on_progress = on_progress
         self.api_base = api_base
+        self.max_retries = max_retries
+        self.max_output_tokens = max_output_tokens
 
         if mode == "local":
-            self.client = OpenAI(api_key=api_key or os.environ.get("OPENAI_API_KEY"))
+            self.client = OpenAI(
+                api_key=api_key or os.environ.get("OPENAI_API_KEY"),
+                max_retries=max_retries
+            )
         elif mode == "remote":
             if not api_base:
                 raise ValueError("api_base is required for remote mode")
@@ -116,6 +123,8 @@ class DocFill:
         file: "str | bytes",
         prompt: str,
         on_progress: Optional[Callable[[dict], None]] = None,
+        max_retries: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
     ) -> FillResult:
         """
         Fill a DOCX template using AI.
@@ -124,14 +133,16 @@ class DocFill:
             file: Path to a .docx file, or raw bytes.
             prompt: Natural-language instructions for filling the template.
             on_progress: Optional callback for progress events.
+            max_retries: Optional override for max retries.
+            max_output_tokens: Optional override for max output tokens.
 
         Returns:
             FillResult with the filled document buffer and metadata.
         """
         if self.mode == "remote":
-            return self._fill_remote(file, prompt, on_progress)
+            return self._fill_remote(file, prompt, on_progress, max_retries, max_output_tokens)
         else:
-            return self._fill_local(file, prompt, on_progress)
+            return self._fill_local(file, prompt, on_progress, max_retries, max_output_tokens)
 
     # ===========================
     # LOCAL MODE
@@ -142,12 +153,19 @@ class DocFill:
         file: "str | bytes",
         prompt: str,
         on_progress: Optional[Callable[[dict], None]] = None,
+        max_retries: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
     ) -> FillResult:
         emit = on_progress or self.on_progress or (lambda e: None)
         import time
         start_time = time.time()
 
+        n_retries = max_retries if max_retries is not None else self.max_retries
+        n_tokens_analyzer = max_output_tokens if max_output_tokens is not None else (self.max_output_tokens or 2000)
+        n_tokens_filler = max_output_tokens if max_output_tokens is not None else (self.max_output_tokens or 4000)
+
         # Step 1: Read file
+        # ... rest of steps updated below ...
         if isinstance(file, str):
             with open(file, "rb") as f:
                 file_bytes = f.read()
@@ -160,7 +178,7 @@ class DocFill:
 
         # Step 3: Analyze slots with AI
         emit({"type": "phase", "message": "Analyzing document structure and detecting placeholders..."})
-        analysis = self._analyze_slots(plain_text)
+        analysis = self._analyze_slots(plain_text, max_retries=n_retries, max_tokens=n_tokens_analyzer)
         document_summary = analysis.get("documentSummary", "Document template")
         slots = [
             _AnalyzedSlot(
@@ -178,7 +196,7 @@ class DocFill:
 
         # Step 4: Fill slots with AI
         emit({"type": "phase", "message": "Analyzing your instructions and filling fields..."})
-        filled = self._fill_slots(slots, prompt, document_summary)
+        filled = self._fill_slots(slots, prompt, document_summary, max_retries=n_retries, max_tokens=n_tokens_filler)
 
         changes = []
         for fs_item in filled:
@@ -246,7 +264,7 @@ class DocFill:
 
         return " ".join(texts), namespaces
 
-    def _analyze_slots(self, plain_text: str) -> dict:
+    def _analyze_slots(self, plain_text: str, max_retries: int = 3, max_tokens: int = 2000) -> dict:
         """Use OpenAI to analyze document and detect fillable slots."""
         system_prompt = """You are a document analysis expert. Your job is to identify ALL fillable placeholders in a document template.
 
@@ -284,6 +302,7 @@ Return valid JSON with this structure:
         response = self.client.chat.completions.create(
             model=self.model,
             response_format={"type": "json_object"},
+            max_tokens=max_tokens,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": plain_text},
@@ -297,6 +316,8 @@ Return valid JSON with this structure:
         slots: list[_AnalyzedSlot],
         user_prompt: str,
         document_summary: str,
+        max_retries: int = 3,
+        max_tokens: int = 4000
     ) -> list[dict]:
         """Use OpenAI to fill detected slots based on user instructions."""
         slots_description = "\n".join(
@@ -332,6 +353,7 @@ Return valid JSON with this structure:
         response = self.client.chat.completions.create(
             model=self.model,
             response_format={"type": "json_object"},
+            max_tokens=max_tokens,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"User's instructions: {user_prompt}"},
@@ -373,6 +395,8 @@ Return valid JSON with this structure:
         file: "str | bytes",
         prompt: str,
         on_progress: Optional[Callable[[dict], None]] = None,
+        max_retries: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
     ) -> FillResult:
         """Fill template via a deployed DocFill API."""
         import base64
@@ -396,6 +420,8 @@ Return valid JSON with this structure:
         url = f"{self.api_base.rstrip('/')}/api/template-filler"
         files_payload = {"file": (filename, file_bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
         data_payload = {"prompt": prompt}
+        if max_retries is not None: data_payload["maxRetries"] = str(max_retries)
+        if max_output_tokens is not None: data_payload["maxOutputTokens"] = str(max_output_tokens)
 
         response = requests.post(url, files=files_payload, data=data_payload, stream=True)
         response.raise_for_status()

@@ -44,6 +44,9 @@ export interface TemplateFillerOutput {
 
 export interface SlotAnalyzerInput {
     documentContent: string;
+    model?: string;
+    maxRetries?: number;
+    maxOutputTokens?: number;
 }
 
 export interface SlotAnalyzerOutput {
@@ -60,6 +63,9 @@ export interface SlotFillerInput {
     userPrompt: string;
     firmId: string;
     documentSummary?: string;
+    model?: string;
+    maxRetries?: number;
+    maxOutputTokens?: number;
 }
 
 export interface SlotFillerOutput {

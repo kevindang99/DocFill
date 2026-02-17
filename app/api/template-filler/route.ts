@@ -25,6 +25,11 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const prompt = form.get("prompt")?.toString().trim() || "";
+    const maxRetriesStr = form.get("maxRetries")?.toString();
+    const maxOutputTokensStr = form.get("maxOutputTokens")?.toString();
+
+    const maxRetries = maxRetriesStr ? parseInt(maxRetriesStr, 10) : undefined;
+    const maxOutputTokens = maxOutputTokensStr ? parseInt(maxOutputTokensStr, 10) : undefined;
 
     if (!file) {
         return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -94,6 +99,8 @@ export async function POST(req: Request) {
                 const result = await df.fill({
                     file: fileBuffer,
                     prompt,
+                    maxRetries,
+                    maxOutputTokens,
                 });
 
                 // Convert the filled DOCX buffer to base64 for download

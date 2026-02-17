@@ -561,8 +561,7 @@ export function findAndReplaceSequential(content: DocxContent, slots: SlotReplac
             searchCursor = matchIndex + originalText.length;
         } else {
             // Case 2: No-Op (Skipped)
-            // Update cursor to end of ORIGINAL text
-            // We skip past this placeholder effectively
+            // Update cursor past the placeholder
             searchCursor = matchEnd;
         }
 

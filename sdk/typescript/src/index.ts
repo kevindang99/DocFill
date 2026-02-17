@@ -14,10 +14,14 @@ import * as path from "path";
 export interface DocFillOptions {
     /** OpenAI API key. Falls back to OPENAI_API_KEY env var. */
     apiKey?: string;
-    /** Model to use (e.g. "gpt-4o"). Falls back to AGENT_MODEL_NAME env var, then default. */
+    /** Model to use (e.g. "gpt-5.1"). Defaults to "gpt-5.1". */
     model?: string;
     /** Progress callback for streaming events. */
     onProgress?: ProgressCallback;
+    /** Max retries for API calls. Defaults to 3. */
+    maxRetries?: number;
+    /** Max output tokens for AI response. Defaults to 4000. */
+    maxOutputTokens?: number;
 }
 
 export interface FillInput {
@@ -27,6 +31,12 @@ export interface FillInput {
     prompt: string;
     /** Optional: progress callback (overrides the one set in the constructor). */
     onProgress?: ProgressCallback;
+    /** Optional: model to use (overrides the one set in the constructor). */
+    model?: string;
+    /** Optional: max retries (overrides the one set in the constructor). */
+    maxRetries?: number;
+    /** Optional: max output tokens (overrides the one set in the constructor). */
+    maxOutputTokens?: number;
 }
 
 export interface FillResult {
@@ -81,13 +91,9 @@ export class DocFill {
     constructor(options: DocFillOptions = {}) {
         this.options = options;
 
-        // Set environment variables if provided via options
+        // Set OpenAI API key if provided via options
         if (options.apiKey) {
             process.env.OPENAI_API_KEY = options.apiKey;
-        }
-        if (options.model) {
-            process.env.AGENT_MODEL_NAME = options.model;
-            process.env.AGENT_ADVANCED_MODEL = options.model;
         }
     }
 
@@ -130,6 +136,9 @@ export class DocFill {
             fileName,
             userPrompt: input.prompt,
             onProgress,
+            model: input.model || this.options.model,
+            maxRetries: input.maxRetries || this.options.maxRetries,
+            maxOutputTokens: input.maxOutputTokens || this.options.maxOutputTokens,
         });
 
         return {
